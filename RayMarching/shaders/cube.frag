@@ -158,10 +158,10 @@ void main( void ) {
 	vec2 p = (uv * 2.0 - 1.0); p.x *= resolution.x / resolution.y;
 	
 	vec3 col = vec3(0.5, 0.7, 0.05);
-	vec3 origin = vec3(1.0*SPEED_SCALE*time, 
-				       0.33,
+	vec3 origin = vec3(0.5+ 1.0*SPEED_SCALE*time, 
+				       3.33,
 			   	       0.0*cos(time*SPEED_SCALE) * 0.0);//2.0 * sin(SPEED_SCALE * time));
-	vec3 target = vec3(1.0*SPEED_SCALE*time+1, 0.33 + 0.0*cos(SPEED_SCALE*time),  1.0*cos(SPEED_SCALE*time) *1.0);
+	vec3 target = vec3(0.5+1.0*SPEED_SCALE*time+1, 3.33 + 0.0*cos(SPEED_SCALE*time),  1.0*cos(SPEED_SCALE*time) *1.0);
 		
 	vec3 direction = normalize(target - origin);	
 	vec3 right = normalize(cross(direction, vec3(0,cos(SPEED_SCALE*time),sin(SPEED_SCALE*time) )));	
