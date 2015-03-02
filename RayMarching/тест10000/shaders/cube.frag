@@ -66,15 +66,16 @@ float menger( vec3 p ) {
 
 }
 
+
 float repetition(vec3 p) {
 	//vec3 c = vec3(1.333, 1.333, 1.333);
-	vec3 c = vec3(2, 2, 2);
+	vec3 c = vec3(1.52, /*2 + 1.5*cos(time*SPEED_SCALE*0.25), */ 2, 1.52 + 1.5*sin(time*SPEED_SCALE*0.25) );// 2);
 	vec3 q = mod(p,c)-0.5*c;
 	return menger(q);// max(sdBox(q, vec3(3,3,3) ),-sdCross(q));//displacement1(q) + torus(q);
 }
 
 float map(vec3 p) {
-	
+	//float sc = (time*SPEED_SCALE);
 	return repetition(p);//max(sdBox(p, vec3(3,3,3) ),-sdCross(p)); 
 }
 
@@ -88,7 +89,7 @@ vec3 getNormal(vec3 p) {
 
 
 
-vec3 intersect(vec3 origin, vec3 direction)
+vec4 intersect(vec3 origin, vec3 direction)
 {
 	float rayLength = 0.1;	
 
@@ -97,23 +98,24 @@ vec3 intersect(vec3 origin, vec3 direction)
     float maxt = 60.0f;
 	float height;
 	float previousDist = 1000;
-
-	for (int i = 0; i < MAX_STEPS; ++i)
+	float i;
+	for (i = 0; i < MAX_STEPS; ++i)
 	{
 		vec3 point = origin + direction*rayLength;
 		
 		float dist = map(origin + direction * rayLength);
-		if(dist < rayLength*0.001)
-			return point;
+		if(dist < 0.001*rayLength)
+			return vec4(point, i/150);
 
-		if(previousDist < dist - 2.5) 
-			break;
+		//if(previousDist < dist - 2.5) 
+		//	break;
 
 		rayLength += dist;
 		previousDist = dist;
 	}	
+	float steps = i/150;
 		
-	return origin + direction*maxt;
+	return vec4(origin + direction*maxt, steps);
 }
 
 vec3 hsv2rgb(vec3 c)
@@ -125,7 +127,7 @@ vec3 hsv2rgb(vec3 c)
 
 vec4 colorize(float c) {
 	
-	float hue = mix(0.46, 1.15, min(c * 1.2 - 0.05, 1.0));
+	float hue = mix (0.46, 1.15, min(c * 1.2 - 0.05, 0.25));
 	float sat = 1.0 - pow(c, 4.0);
 	float lum = c;
 	vec3 hsv = vec3(hue, sat, lum);
@@ -156,20 +158,21 @@ void main( void ) {
 	vec2 p = (uv * 2.0 - 1.0); p.x *= resolution.x / resolution.y;
 	
 	vec3 col = vec3(0.5, 0.7, 0.05);
-	vec3 origin = vec3(SPEED_SCALE*time, // + 2.0* cos(SPEED_SCALE * time),
-				       0.33,//2.0 + 1.0 * cos(SPEED_SCALE * time),
-			   	       5 + cos(time*SPEED_SCALE) * 0.0);//2.0 * sin(SPEED_SCALE * time));
-	vec3 target = vec3(SPEED_SCALE*time+1,0.33, 5+ cos(SPEED_SCALE*time) * 0.0);
+	vec3 origin = vec3(0.5+ 1.0*SPEED_SCALE*time, 
+				       2.33,
+			   	       0.0*cos(time*SPEED_SCALE) * 0.0);//2.0 * sin(SPEED_SCALE * time));
+	vec3 target = vec3(0.5+1.0*SPEED_SCALE*time+1, 2.33 + 0.0*cos(SPEED_SCALE*time),  0.0*cos(SPEED_SCALE*time) *1.0);
 		
 	vec3 direction = normalize(target - origin);	
 	vec3 right = normalize(cross(direction, vec3(0,cos(SPEED_SCALE*time),sin(SPEED_SCALE*time) )));	
 	vec3 up = normalize(cross(right, direction));	
 	vec3 rayDirection = normalize(p.x * right + p.y * up + 1.5 * direction);		
-	vec3 intersectionPoint = intersect(origin, rayDirection);
+	vec4 intersectionPoint = intersect(origin, rayDirection);
 
 	//if(length(intersectionPoint) < 15)
-    vec4 shit = 0.5*vec4(ambient(intersectionPoint, getNormal(intersectionPoint))); //vec4( 0.5*(getNormal(intersectionPoint)+vec3(1,1,1)), 1.0);
-	shit += 0.3*vec4(getNormal(intersectionPoint), 1.0) + colorize(0.2 + length(intersectionPoint - origin)/9.35);// - vec3(length(intersctionPoint)/20);
+	
+    vec4 shit = 0.5*vec4(ambient(intersectionPoint.xyz, getNormal(intersectionPoint.xyz))); //vec4( 0.5*(getNormal(intersectionPoint)+vec3(1,1,1)), 1.0);
+	shit += 0.00*vec4(getNormal(intersectionPoint.xyz), 1.0) + 0.3*vec4(0.6, 1.2*intersectionPoint.w,5*intersectionPoint.w,1.0) +  1.5*colorize(0.1 + length(intersectionPoint.xyz - origin)/24.35);// - vec3(length(intersctionPoint)/20);
 	//col = vec3(length(intersectionPoint)/10);
 	//col = vec3(0.5, intersect(origin, rayDirection).y/2.0, 0.5);
 	

@@ -33,6 +33,9 @@
     <ClCompile Include="textfile.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
+    <ClCompile Include="framebuffer.cpp">
+      <Filter>Файлы исходного кода</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h">
@@ -56,6 +59,12 @@
     <ClInclude Include="camera.h">
       <Filter>Заголовочные файлы</Filter>
     </ClInclude>
+    <ClInclude Include="compute_shader.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
+    <ClInclude Include="framebuffer.h">
+      <Filter>Заголовочные файлы</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\default.frag">
@@ -68,6 +77,24 @@
       <Filter>Файлы ресурсов</Filter>
     </None>
     <None Include="shaders\cube.frag">
+      <Filter>Файлы ресурсов</Filter>
+    </None>
+    <None Include="shaders\first_rt.vert">
+      <Filter>Файлы ресурсов</Filter>
+    </None>
+    <None Include="shaders\rt.frag">
+      <Filter>Файлы ресурсов</Filter>
+    </None>
+    <None Include="shaders\rt.vert">
+      <Filter>Файлы ресурсов</Filter>
+    </None>
+    <None Include="shaders\first_rt.frag">
+      <Filter>Файлы ресурсов</Filter>
+    </None>
+    <None Include="shaders\reprojection.frag">
+      <Filter>Файлы ресурсов</Filter>
+    </None>
+    <None Include="shaders\reprojection.vert">
       <Filter>Файлы ресурсов</Filter>
     </None>
   </ItemGroup>

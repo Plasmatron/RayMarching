@@ -67,6 +67,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="camera.cpp" />
+    <ClCompile Include="framebuffer.cpp" />
     <ClCompile Include="init.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="quad.cpp" />
@@ -75,6 +76,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
+    <ClInclude Include="compute_shader.h" />
+    <ClInclude Include="framebuffer.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="quad.h" />
     <ClInclude Include="renderer.h" />
@@ -90,6 +93,12 @@
     <None Include="shaders\cube.vert" />
     <None Include="shaders\default.frag" />
     <None Include="shaders\default.vert" />
+    <None Include="shaders\first_rt.frag" />
+    <None Include="shaders\first_rt.vert" />
+    <None Include="shaders\reprojection.frag" />
+    <None Include="shaders\reprojection.vert" />
+    <None Include="shaders\rt.frag" />
+    <None Include="shaders\rt.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

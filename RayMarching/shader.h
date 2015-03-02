@@ -42,8 +42,7 @@ class Shader{
 		GLint infoLogLength;
 		glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &infoLogLength);
 		
-		
-		int length;
+				
 		glGetShaderInfoLog(vertexShader, infoLogLength, NULL, buffer);
 		glGetShaderInfoLog(fragmentShader, infoLogLength, NULL, buffer);
 
