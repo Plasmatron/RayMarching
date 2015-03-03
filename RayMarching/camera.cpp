@@ -8,7 +8,7 @@ Camera::Camera() {
 	zNear = 0.1;
 	zFar = 100;
 	viewMatrix = lookAt( position, viewVector, upVector);
-	projectionMatrix = perspective<float>(55,(GLfloat)g_rRect.right/(GLfloat)g_rRect.bottom, zNear, zFar);
+	projectionMatrix = perspective<float>(155,(GLfloat)g_rRect.right/(GLfloat)g_rRect.bottom, zNear, zFar);
 	inverseMatrix = inverse(projectionMatrix * viewMatrix);
 	previousPosition = position;
 	previousViewMatrix = viewMatrix;

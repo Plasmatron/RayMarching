@@ -16,7 +16,6 @@ Framebuffer :: Framebuffer(GLint _width, GLint _height, unsigned int _numOfColor
 Framebuffer :: ~Framebuffer(){	
 
 	glDeleteTextures(numOfColorAttachments, textures);
-
 	glDeleteFramebuffers(1, &handle);
 
 }

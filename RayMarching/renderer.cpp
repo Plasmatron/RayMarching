@@ -4,9 +4,9 @@ Renderer::Renderer() {
 	time = 0.0;
 	mainCamera = new Camera();
 	buffers[0] = new Framebuffer(g_rRect.right, g_rRect.bottom, 2, GL_RGB8);
-	buffers[1] = new Framebuffer(g_rRect.right, g_rRect.bottom, 2, GL_RGB8);
+	//buffers[1] = new Framebuffer(g_rRect.right, g_rRect.bottom, 2, GL_RGB8);
 	buffers[0]->init();
-	buffers[1]->init();
+	//buffers[1]->init();
 
 
 
@@ -18,8 +18,7 @@ Renderer::Renderer() {
 	rt->bind();		
 		rt->passUniform(1.0, "firstPass");
 		rt->passTexture(0, "colorTex");
-		rt->passTexture(1, "depthTex");
-		rt->passTexture(2, "reprojectionCoords");
+		rt->passTexture(1, "depthTex");		
 
 		rt->passUniform(mainCamera->position, "position");
 		rt->passUniform(mainCamera->direction, "direction");
@@ -64,8 +63,8 @@ Renderer::Renderer() {
 	rt->unbind();
 
 
-	last = 0;
-	current = 1;
+	//last = 0;
+	//current = 1;
 
 }
 
@@ -78,16 +77,17 @@ void Renderer::RenderScene() {
 	
 
 		mainCamera->Update();
-		buffers[current]->bind();
+		buffers[0]->bind();
 		GLenum bufs []= {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-		buffers[current]->bindAttachments(2, bufs);
+		buffers[0]->bindAttachments(2, bufs);
 				
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, buffers[last]->textures[0]);
+		glBindTexture(GL_TEXTURE_2D, buffers[0]->textures[0]);
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, buffers[last]->textures[1]);
+		glBindTexture(GL_TEXTURE_2D, buffers[0]->textures[1]);
 
 		rt->bind();
+
 			rt->passUniform(mainCamera->position, "position");
 			rt->passUniform(mainCamera->direction, "direction");
 			rt->passUniform(mainCamera->upVector, "upVector");
@@ -96,26 +96,23 @@ void Renderer::RenderScene() {
 			rt->passUniform(mainCamera->inverseMatrix, "inverseMatrix");
 			rt->passUniform(mainCamera->previousViewMatrix, "previousViewMatrix");
 
-
-
 			quad->Render();
+
 		rt->unbind();
-
-
 		
-		
+
 
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);	
 	glViewport(0,0,g_rRect.right, g_rRect.bottom);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, buffers[last]->textures[0]);
+	glBindTexture(GL_TEXTURE_2D, buffers[0]->textures[0]);
 
 	base->bind();		
 		quad->Render(); //flat texture screen shader 
 	base->unbind();
 
-	std::swap(last, current);
+	//std::swap(last, current);
 
 }
 

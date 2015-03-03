@@ -55,13 +55,13 @@ float menger( vec3 p ) {
 }
 
 float repetition(vec3 p) {	
-	vec3 c = vec3(2, 2, 2);// 2);
+	vec3 c = vec3(2, 2, 3);// 2);
 	vec3 q = mod(p,c)-0.5*c;
 	return menger(q);
 }
 
 float map(vec3 p) {
-	return repetition(p);
+	return repetition(p/5)*5;
 }
 
 vec3 getNormal(vec3 p ) {
@@ -171,8 +171,11 @@ void main( void ) {
 	vec3 rayDirection = normalize(p.x * right + p.y * up + 1.5 * direction);		
 	vec4 intersectionPoint = intersect(origin, rayDirection);
 	
-    vec3 shit = vec3(0.0,0.0,0.0) + vec3(1.0,1.0,1.0) * 0.5* ambient(intersectionPoint.xyz, getNormal(intersectionPoint.xyz)); 
-	shit += 0.3*vec3(0.3, 1.2*intersectionPoint.w,5*intersectionPoint.w);// +  colorize(pow (0.7, intersectionPoint.w));
+    vec3 shit = vec3(0.0,0.0,0.0); 
+	shit += vec3(1.0,1.0,1.0) * 0.2* ambient(intersectionPoint.xyz, getNormal(intersectionPoint.xyz)); 
+	if(length(intersectionPoint.xyz - origin) > 60)
+		shit += vec3(1.0,1.0,1.0) * 0.8;// ambient(intersectionPoint.xyz, getNormal(intersectionPoint.xyz)); 
+	shit += 0.3*vec3(0.3, 1.2*intersectionPoint.w,5*intersectionPoint.w);
 
 	depth = unpackColor(length(intersectionPoint.xyz - origin));
 	
