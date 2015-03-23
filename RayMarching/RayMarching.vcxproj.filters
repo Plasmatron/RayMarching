@@ -97,5 +97,8 @@
     <None Include="shaders\reprojection.vert">
       <Filter>Файлы ресурсов</Filter>
     </None>
+    <None Include="shaders\ray_tracer.comp">
+      <Filter>Файлы ресурсов</Filter>
+    </None>
   </ItemGroup>
 </Project>

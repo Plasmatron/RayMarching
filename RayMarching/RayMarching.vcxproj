@@ -95,6 +95,7 @@
     <None Include="shaders\default.vert" />
     <None Include="shaders\first_rt.frag" />
     <None Include="shaders\first_rt.vert" />
+    <None Include="shaders\ray_tracer.comp" />
     <None Include="shaders\reprojection.frag" />
     <None Include="shaders\reprojection.vert" />
     <None Include="shaders\rt.frag" />

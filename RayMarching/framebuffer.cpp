@@ -1,9 +1,10 @@
 #include "framebuffer.h"
 
-Framebuffer :: Framebuffer(GLint _width, GLint _height, unsigned int _numOfColorAttachments, GLenum _format){
+Framebuffer :: Framebuffer(GLint _width, GLint _height, unsigned int _numOfColorAttachments, GLenum _format, unsigned int _numOfDepthAttachments){
 	width = _width;
 	height = _height;
 	numOfColorAttachments = _numOfColorAttachments;
+	numOfDepthAttachments = _numOfDepthAttachments;
 	
 
 	format = _format;
@@ -16,6 +17,7 @@ Framebuffer :: Framebuffer(GLint _width, GLint _height, unsigned int _numOfColor
 Framebuffer :: ~Framebuffer(){	
 
 	glDeleteTextures(numOfColorAttachments, textures);
+
 	glDeleteFramebuffers(1, &handle);
 
 }
@@ -25,8 +27,18 @@ void Framebuffer ::init(){
 	glGenFramebuffers(1, &handle);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, handle);
 
-		textures = new GLuint [numOfColorAttachments];
-		glGenTextures(numOfColorAttachments, textures);
+		if(numOfDepthAttachments){
+
+			textures = new GLuint [numOfColorAttachments + 1];
+			glGenTextures(numOfColorAttachments + 1, textures);
+
+		}
+		else{
+
+			textures = new GLuint [numOfColorAttachments];
+			glGenTextures(numOfColorAttachments, textures);
+
+		}
 
 		if(numOfColorAttachments)
 			colorAttachments = new GLenum [numOfColorAttachments];
@@ -46,6 +58,22 @@ void Framebuffer ::init(){
 			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, textures[i], 0);
 			++i;
 		}
+
+
+		if(numOfDepthAttachments == 1){
+
+			glBindTexture(GL_TEXTURE_2D, textures[numOfColorAttachments]);
+			
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT24, width, height, 0,  GL_DEPTH_COMPONENT, GL_INT, NULL); 
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+			glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, textures[numOfColorAttachments], 0);
+		}
+
 
 		
 
@@ -86,6 +114,15 @@ void Framebuffer :: bindAttachment(GLenum attachment){
 	glDrawBuffer(attachment);
 
 }
+
+
+void Framebuffer :: BindDepthAttachment(){
+	glViewport(0,0, width, height);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, handle);
+	//glFramebufferTextureLayer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, textures[numOfColorAttachments], 0, attachment);
+
+}
+
 
 
 void Framebuffer::clear(GLbitfield clearMask){

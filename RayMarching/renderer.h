@@ -15,6 +15,7 @@ struct Renderer {
 	Shader *rt;
 	Shader *reprojection;
 	Shader *base;
+	
 	Renderer();
 	//~Renderer();
 	void RenderScene();

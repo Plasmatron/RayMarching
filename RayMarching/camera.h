@@ -1,5 +1,5 @@
 #include "utility.h"
-#define kSpeed 0.01
+//#define kSpeed 0.005
 
 using namespace glm;
 
@@ -12,6 +12,8 @@ struct Camera{
 	vec3 viewVector;
 	vec3 strVector;
 	vec3 previousPosition;
+	vec3 previousDirection;
+
 
 	mat4 viewMatrix;
 	mat4 projectionMatrix;
@@ -20,6 +22,8 @@ struct Camera{
 
 	float zNear;
 	float zFar;
+	float kSpeed;
+	float currentSpeed;
 	Camera();
  
     vec3 Position() {   return position; }

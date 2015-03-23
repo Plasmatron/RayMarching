@@ -5,13 +5,17 @@ Camera::Camera() {
 	position = vec3(0,0,0);
 	viewVector = vec3(1,0,0);
 	upVector = vec3(0,1,0);
-	zNear = 0.1;
+	zNear = 0.01;
 	zFar = 100;
-	viewMatrix = lookAt( position, viewVector, upVector);
-	projectionMatrix = perspective<float>(155,(GLfloat)g_rRect.right/(GLfloat)g_rRect.bottom, zNear, zFar);
+	viewMatrix = lookAt( viewVector, position, upVector);
+	projectionMatrix = perspective<float>(45,(GLfloat)g_rRect.right/(GLfloat)g_rRect.bottom, zNear, zFar);
 	inverseMatrix = inverse(projectionMatrix * viewMatrix);
 	previousPosition = position;
+	previousDirection = direction;
+
 	previousViewMatrix = viewMatrix;
+	kSpeed = 0.005;
+	currentSpeed = 0.001;
 	
 
 }
@@ -67,7 +71,7 @@ void Camera::MoveCamera(float speed)
     viewVector.x += vVector.x * speed;
     viewVector.z += vVector.z * speed;
 	viewVector.y += vVector.y * speed;
-
+	
 }
 
 
@@ -162,6 +166,7 @@ void Camera::CheckForMovement()
     if( GetKeyState('D') & 0x80) {  
         StrafeCamera(speed);
     }
+	
 		
 }
 
@@ -169,14 +174,26 @@ void Camera::Update()
 {
 	vec3 vCross = cross(viewVector - position, upVector);     
     strVector = normalize(vCross);
-	previousViewMatrix = viewMatrix;
-    viewMatrix = glm ::lookAt(position, viewVector, upVector);
-	inverseMatrix = inverse(projectionMatrix * viewMatrix);
+	//position.y -= currentSpeed;
+	//viewVector.y -= currentSpeed;
+	//if(currentSpeed == 0.0)
+	//	currentSpeed = 0.005;
+	//currentSpeed += 0.01*currentSpeed;
 
+	previousViewMatrix = viewMatrix;
+	previousDirection = direction;
 	previousPosition = position;
 
+	
+
+    viewMatrix = glm ::lookAt(viewVector, position, upVector);
+	inverseMatrix = inverse(projectionMatrix * viewMatrix);
+
+	
+
 	SetViewByMouse();
-    CheckForMovement();
+	CheckForMovement();
+    
 	direction = viewVector - position;
 
 }

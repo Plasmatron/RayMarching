@@ -5,31 +5,24 @@ uniform vec3 position;
 uniform vec3 direction;
 uniform vec3 upVector;
 uniform vec3 deltaTranslate;
-uniform vec3 previousDirection;
 uniform float time;
 
 
 uniform mat4 previousViewMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
-uniform mat4 inverseMatrix;
-uniform float face;
+
+
 
 uniform sampler2D colorTex;
 uniform sampler2D depthTex;
 
-#define MAX_STEPS 20
+#define MAX_STEPS 50
 #define SPEED_SCALE 0.25
 #define INF 64
 
 out vec3 color;
 //out vec3 depthRGB;
-
-
-vec3 rayPlaneIntersection(vec3 rayBegin, vec3 rayEnd, vec3 normal, vec3 point) {
-
-	return vec3(1.0);
-}
 
 
 float sdBox( vec3 p, vec3 b )
@@ -43,7 +36,7 @@ float menger(vec3 p) {
 
 	float d = sdBox(p, vec3(1.0));
 	float s = 1.0;
-	for (int m = 0; m<2; m++)
+	for (int m = 0; m<5; m++)
 	{
 		vec3 a = mod(p*s, 2.0) - 1.0;
 		s *= 3.0;
@@ -106,8 +99,7 @@ void main(void) {
 	vec3 direction = normalize(target - origin);
 	vec3 right = normalize(cross(direction, upVector));
 	vec3 up = normalize(cross(right, direction));
-	vec3 rayDirection = normalize(p.x * right + p.y * up + 1.5 * direction);	
-
+	vec3 rayDirection = normalize(p.x * right + p.y * up + 1.5 * direction);
 
 	
 
@@ -117,28 +109,34 @@ void main(void) {
 	//vec3 ray = rayEnd - rayBegin;
 	//vec2 uvStart = rayPlaneIntersection(ray, previousDirection, previousDirection * 0.01);
 	//vec2 uvEnd = rayPlaneIntersection(ray, previousDirection, previousDirection * 100);	
-
-	vec2 uvn = vec2(uv+(direction-previousDirection));//uv+vec2(abs(direction.x - previousDirection.x), direction.y-previousDirection.y);	
-	vec2 pm = uv*2.0 -1.0;
-	vec4 clip = projectionMatrix * viewMatrix * inverse(previousViewMatrix) * inverse(projectionMatrix) * vec4(pm, 0.987, 1.0);
-	vec4 clip1 = projectionMatrix * previousViewMatrix * inverse(viewMatrix) * inverse(projectionMatrix) * vec4(pm, 0.987, 1.0);
-
-	//pm = clip.xy/clip.w;
-
-	uvn = vec2(clip1.x, clip.y);
-	uvn = uvn*0.5 +0.5;
-	//uv.y = 1 - uv.y;
-	//uv = vec2(floor(((clip.x)*resolution.x))/resolution.x, floor((clip.y)*resolution.y)/resolution.y);	
+	
+	vec4 clip =  (projectionMatrix * previousViewMatrix * inverse(viewMatrix) * inverse(projectionMatrix) ) * vec4(uv.x, uv.y, 100, 1.0);	
+	uv = vec2(floor(((clip.x)*resolution.x))/resolution.x, floor((clip.y)*resolution.y)/resolution.y);
 	//color = vec3(intersectionPoint.w);
 	float z = 0.0;
-	vec4 intersectionPoint = intersect(origin, rayDirection);
-	if (uv.x > 0.5 || uv.y > 1.0 || uv.x < 0.0 || uv.y < 0.0 || firstPass == 1.0){
-		gl_FragDepth = length(origin-intersectionPoint.xyz)/5;
-		color = vec3(length(origin-intersectionPoint.xyz)/5);
+	//if (firstPass == 0.0){
+	
+	
+
+	if (uv.x > 1 || uv.y > 1 || uv.x < 0 || uv.y < 0 || firstPass == 1.0){
+		vec4 intersectionPoint = intersect(origin, rayDirection);
+		gl_FragDepth = length(origin - intersectionPoint.xyz) / 2.0;
+		color = vec3(length(origin - intersectionPoint.xyz) / 2.0);
 	}
-	else {
-		z = texture2D(depthTex, vec2(uvn.x, uvn.y)).z;
-		gl_FragDepth = z;		
-		color = vec3(z)+ vec3(0.25,0.11,0.5);
-	}	
+	else {		
+		z = texture(depthTex, uv.xy).z;
+		gl_FragDepth = z;
+		color = vec3(z);
+		
+	}
+
+
+	/* 
+	}
+	else{
+		color = vec3(0.0);
+		gl_FragDepth = length(origin - intersectionPoint.xyz) / 1.0;
+	}
+	*/
+
 }

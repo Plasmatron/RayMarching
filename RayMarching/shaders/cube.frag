@@ -1,11 +1,28 @@
-
-uniform float time;
-uniform vec2 mouse;
+#version 150
 uniform vec2 resolution;
+uniform float firstPass;
+uniform vec3 position;
+uniform vec3 direction;
+uniform vec3 upVector;
+uniform vec3 deltaTranslate;
+uniform float time;
 
-#define MAX_STEPS 120
+
+uniform mat4 inverseMatrix;
+uniform mat4 viewMatrix;
+uniform mat4 projectionMatrix;
+
+
+
+uniform sampler2D colorTex;
+uniform sampler2D depthRGBTex;
+
+#define MAX_STEPS 131
 #define SPEED_SCALE 0.25
 #define INF 64
+
+out vec3 color;
+out vec3 depthRGB;
 
 
 float sdBox( vec3 p, vec3 b )
@@ -37,15 +54,19 @@ float menger( vec3 p ) {
 
 }
 
-
 float repetition(vec3 p) {	
-	vec3 c = vec3(1.52, 2, 1.52 + 1.5*sin(time*SPEED_SCALE*0.25) );// 2);
+	vec3 c = vec3(2.7, 2.7, 2.7);// 2);
 	vec3 q = mod(p,c)-0.5*c;
 	return menger(q);
 }
 
 float map(vec3 p) {
-	return repetition(p);
+	
+	if(p.y < 0)
+		return repetition(p);
+	else
+		return 1000;
+	
 }
 
 vec3 getNormal(vec3 p ) {
@@ -57,16 +78,11 @@ vec3 getNormal(vec3 p ) {
 	return normalize(n);
 }
 
-
 vec4 intersect(vec3 origin, vec3 direction)
 {
-	float rayLength = 0.1;	
-
-	float delt = 0.01f;
-    float mint = 0.001f;
-    float maxt = 60.0f;
-	float height;
-	float previousDist = 1000;
+	float rayLength = 0.005;	
+	    
+    float maxt = 120.0f;	
 	float i;
 	for (i = 0; i < MAX_STEPS; ++i)
 	{
@@ -74,15 +90,11 @@ vec4 intersect(vec3 origin, vec3 direction)
 		
 		float dist = map(origin + direction * rayLength);
 		if(dist < 0.001*rayLength)
-			return vec4(point, i/120);
+			return vec4(point, abs(i-10)/120 );
 
-		//if(previousDist < dist - 2.5) 
-		//	break;
-
-		rayLength += dist;
-		previousDist = dist;
+		rayLength += dist;		
 	}	
-	float steps = i/120;
+	float steps = abs(i-10)/120;
 		
 	return vec4(origin + direction*maxt, steps);
 }
@@ -94,14 +106,14 @@ vec3 hsv2rgb(vec3 c)
     return c.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), c.y);
 }
 
-vec4 colorize(float c) {
+vec3 colorize(float c) {
 	
-	float hue = mix (0.46, 1.15, min(c * 1.2 - 0.05, 0.25));
+	float hue = mix (0.75, 1.15, min(c * 1.2 - 0.05, 0.25));
 	float sat = 1.0 - pow(c, 4.0);
 	float lum = c;
 	vec3 hsv = vec3(hue, sat, lum);
 	vec3 rgb = hsv2rgb(hsv);
-	return vec4(rgb, 1.0);	
+	return rgb;
 }
 
 float ambient(vec3 position, vec3 normal) {
@@ -109,7 +121,7 @@ float ambient(vec3 position, vec3 normal) {
 	normal *= -1;
 	vec3 n;
 	vec3 p;
-	for(int i = 1; i < 5; ++i) {
+	for(float i = 1; i < 5; ++i) {
 		n = normal*i/50;
 		p = position+n;
 		dist += pow(0.5, i) * (abs(map(p))/length(n));
@@ -118,30 +130,69 @@ float ambient(vec3 position, vec3 normal) {
 }
 
 
+/*
+vec3 unproject() {
+	vec2 pixelSize = 1.0 / resolution;//(1.0/resolution.x, 1.0/resolution.y);	
+	vec3 pos = vec3 (( gl_FragCoord.x * pixelSize.x ) , ( gl_FragCoord.y * pixelSize.y ) , 0.0);
+	pos.z = texture( depthTex, pos.xy).r ;		
+	vec4 clip = inverseMatrix * vec4 ( pos * 2.0 - 1.0 , 1.0);
+	pos = clip . xyz / clip . w;
+	return pos;
+}
+
+
+vec2 project(vec3 pos) {
+	pos = vec3(vec4(pos, 1.0)*viewMatrix*projectionMatrix);
+	return pos.xy;
+}
+*/
+
+
+/*
+float packColor(vec3 color) {
+    return color.r + color.g * 256.0 + color.b * 256.0 * 256.0;
+}
+
+vec3 unpackColor(float f) {
+    vec3 color;
+    color.b = floor(f / 256.0 / 256.0);
+    color.g = floor((f - color.b * 256.0 * 256.0) / 256.0);
+    color.r = floor(f - color.b * 256.0 * 256.0 - color.g * 256.0);
+    // now we have a vec3 with the 3 components in range [0..256]. Let's normalize it!
+    return color / 256.0;
+}
+*/
 
 void main( void ) {
 
 	vec2 uv = gl_FragCoord.xy / resolution;
 	
 	vec2 p = (uv * 2.0 - 1.0); p.x *= resolution.x / resolution.y;
-	
-	vec3 col = vec3(0.5, 0.7, 0.05);
-	vec3 origin = vec3(0.5+ 1.0*SPEED_SCALE*time, 
-				       2.33,
-			   	       0.0*cos(time*SPEED_SCALE) * 0.0);//2.0 * sin(SPEED_SCALE * time));
-	vec3 target = vec3(0.5+1.0*SPEED_SCALE*time+1, 2.33 + 0.0*cos(SPEED_SCALE*time),  0.0*cos(SPEED_SCALE*time) *1.0);
+	vec3 pos = vec3(position.x, position.y + 0.01, position.z) ;
+	vec3 origin = pos;
+	vec3 target = pos + direction;
 		
 	vec3 direction = normalize(target - origin);	
-	vec3 right = normalize(cross(direction, vec3(0,cos(SPEED_SCALE*time),sin(SPEED_SCALE*time) )));	
+	vec3 right = normalize(cross(direction, upVector));	
 	vec3 up = normalize(cross(right, direction));	
-	vec3 rayDirection = normalize(p.x * right + p.y * up + 1.5 * direction);		
-	vec4 intersectionPoint = intersect(origin, rayDirection);
-
-
+	vec3 rayDirection = normalize(p.x * right + p.y * up + 1.5 * direction);	
+	float d1 = 1.00;
+	//if(firstPass == 0.0)
+		//d1 = packColor(texture2D(depthRGBTex, vec2(1-uv.x, 1-uv.y) ).rgb);	
+	vec4 intersectionPoint = intersect(origin, rayDirection*d1);
 	
-    vec4 shit = 0.5*vec4(ambient(intersectionPoint.xyz, getNormal(intersectionPoint.xyz))); //vec4( 0.5*(getNormal(intersectionPoint)+vec3(1,1,1)), 1.0);
-	shit += 0.3*vec4(0.3, 1.2*intersectionPoint.w,5*intersectionPoint.w,1.0) +  1.5*colorize(0.1 + length(intersectionPoint.xyz - origin)/24.35);// - vec3(length(intersctionPoint)/20);
-	
-	gl_FragColor = shit;
-
+    vec3 shit = vec3(0.0); 
+	//shit += vec3(1.0,1.0,1.0) * 0.2* ambient(intersectionPoint.xyz, getNormal(intersectionPoint.xyz)); 
+	if(intersectionPoint.w < 1){
+		shit += vec3(0.2,1.0,1.5) * 0.4 * ambient(intersectionPoint.xyz, getNormal(intersectionPoint.xyz))*(1.01 - intersectionPoint.w); 
+	}
+	shit += 1.2*(colorize(sqrt(intersectionPoint.w)) );//0.3*vec3(8.0*intersectionPoint.w, 0.0*intersectionPoint.w, 1.2);
+	//shit += colorize(length(intersectionPoint.xyz - origin)/120);
+	//depthRGB = unpackColor(length(origin - intersectionPoint.xyz));
+	//color = vec3(length(origin-intersectionPoint.xyz)/ (length(direction)*420.0) );
+	color = shit;
+	//if(firstPass == 0.0)
+	//	color = texture2D(colorTex, uv).rgb;
+	//else
+	//	color = vec3(0.0, 0.0, 0.5);
 }

@@ -22,17 +22,19 @@ public:
 	unsigned int width;
 	unsigned int height;
 	unsigned int numOfColorAttachments;
+	unsigned int numOfDepthAttachments;
 	GLuint handle;
 	GLuint* textures;
 	GLenum* colorAttachments;
 	GLenum format;
-	Framebuffer(GLint _width, GLint _height, unsigned int _numOfColorAttachments, GLenum _format);
+	Framebuffer(GLint _width, GLint _height, unsigned int _numOfColorAttachments, GLenum _format, unsigned int _numOfDepthAttachments);
 	~Framebuffer();
 	void init();
 	void bind();
 	void unbind();
 	void bindAttachments(GLint size, GLenum* attachments);
 	void bindAttachment(GLenum attachment);
+	void BindDepthAttachment();
 	void clear(GLbitfield clearMask);
 
 };
