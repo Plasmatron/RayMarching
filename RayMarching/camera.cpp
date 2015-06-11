@@ -5,16 +5,17 @@ Camera::Camera() {
 	position = vec3(0,0,0);
 	viewVector = vec3(1,0,0);
 	upVector = vec3(0,1,0);
-	zNear = 0.01;
+	zNear = 1;
 	zFar = 100;
 	viewMatrix = lookAt( viewVector, position, upVector);
-	projectionMatrix = perspective<float>(45,(GLfloat)g_rRect.right/(GLfloat)g_rRect.bottom, zNear, zFar);
+	projectionMatrix = perspectiveFov<float>(67.38013502,(GLfloat)1600,(GLfloat)900, zNear, zFar);	
+	
 	inverseMatrix = inverse(projectionMatrix * viewMatrix);
 	previousPosition = position;
 	previousDirection = direction;
 
 	previousViewMatrix = viewMatrix;
-	kSpeed = 0.005;
+	kSpeed = 0.05;
 	currentSpeed = 0.001;
 	
 
@@ -27,9 +28,9 @@ void Camera::RotateView(float angle, float x, float y, float z)
     vec3 vView;
 
 
-    vView.x = viewVector.x - position.x;    //направление по X
-    vView.y = viewVector.y - position.y;    //направление по Y
-    vView.z = viewVector.z - position.z;    //направление по Z
+    vView.x = viewVector.x - position.x;   
+    vView.y = viewVector.y - position.y;   
+    vView.z = viewVector.z - position.z;   
 
 
     float cosTheta = (float)cos(angle);
@@ -80,13 +81,14 @@ void Camera::SetViewByMouse()
     POINT mousePos;         
 
     
-	int middleX = g_rRect.right  >> 1;   
-	int middleY = g_rRect.bottom >> 1;   
+	int middleX = 1600 >> 1;   
+	int middleY = 900 >> 1;   
     float angleY = 0.0f;   
     float angleZ = 0.0f;    
     static float currentRotX = 0.0f;
 
-    GetCursorPos(&mousePos);
+    //glfwGetCursorPos (GLFWwindow *window, double *xpos, double *ypos);//
+	GetCursorPos(&mousePos);
 
     if( (mousePos.x == middleX) && (mousePos.y == middleY) ) return;
  
@@ -152,6 +154,7 @@ void Camera::CheckForMovement()
 	float speed = kSpeed;
 	
     if( GetKeyState('W') & 0x80) {
+		
         MoveCamera(speed);
     } 
     // ВНИЗ или S
@@ -185,14 +188,16 @@ void Camera::Update()
 	previousPosition = position;
 
 	
+	SetViewByMouse();
+	CheckForMovement();
+
 
     viewMatrix = glm ::lookAt(viewVector, position, upVector);
 	inverseMatrix = inverse(projectionMatrix * viewMatrix);
 
 	
 
-	SetViewByMouse();
-	CheckForMovement();
+	
     
 	direction = viewVector - position;
 

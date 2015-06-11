@@ -1,5 +1,5 @@
 #include "utility.h"
-//#define kSpeed 0.005
+//#define kSpeed 0.5
 
 using namespace glm;
 
@@ -17,6 +17,7 @@ struct Camera{
 
 	mat4 viewMatrix;
 	mat4 projectionMatrix;
+	mat4 farProjectionMatrix;
 	mat4 inverseMatrix;
 	mat4 previousViewMatrix;
 

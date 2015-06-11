@@ -4,25 +4,47 @@ uniform float firstPass;
 uniform vec3 position;
 uniform vec3 direction;
 uniform vec3 upVector;
-uniform vec3 deltaTranslate;
 uniform float time;
 
 
-uniform mat4 inverseMatrix;
-uniform mat4 viewMatrix;
-uniform mat4 projectionMatrix;
 
 
 
 uniform sampler2D colorTex;
 uniform sampler2D depthRGBTex;
 
-#define MAX_STEPS 131
-#define SPEED_SCALE 0.25
+#define MAX_STEPS 100
 #define INF 64
 
 out vec3 color;
 out vec3 depthRGB;
+
+
+#define SCALE -1.5
+#define MINRAD2 0.5
+
+#define DIST_MULTIPLIER 1.0
+#define MAX_DIST 4.0
+
+#define iters 20
+
+float minRad2 = clamp(MINRAD2, 1.0e-9, 1.0);
+vec4 scale = vec4(SCALE, SCALE, SCALE, abs(SCALE)) / minRad2;
+float absScalem1 = abs(SCALE - 1.0);
+float AbsScaleRaisedTo1mIters = pow(abs(SCALE), float(1-iters));
+
+float d(vec3 pos) {
+  vec4 p = vec4(pos,1), p0 = p;  // p.w is the distance estimate
+
+  for (int i=0; i<iters; i++) {    
+    p.xyz = clamp(p.xyz, -1.0, 1.0) * 2.0 - p.xyz;  
+    float r2 = dot(p.xyz, p.xyz);
+    p *= clamp(max(minRad2/r2, minRad2), 0.0, 1.0);      
+    p = p*scale + p0;
+  }
+  return ((length(p.xyz) - absScalem1) / p.w - AbsScaleRaisedTo1mIters) * DIST_MULTIPLIER;
+}
+
 
 
 float sdBox( vec3 p, vec3 b )
@@ -33,11 +55,11 @@ float sdBox( vec3 p, vec3 b )
 }
 
 
-float menger( vec3 p ) {
+float menger( vec3 p , float lod) {
 
 	float d = sdBox(p,vec3(1.0));
 	float s = 1.0;
-	for( int m=0; m<5; m++ )
+	for( int m=0; m<lod; m++ )
 	{
 		vec3 a = mod( p*s, 2.0 )-1.0;
 		s *= 3.0;
@@ -54,47 +76,56 @@ float menger( vec3 p ) {
 
 }
 
-float repetition(vec3 p) {	
-	vec3 c = vec3(2.7, 2.7, 2.7);// 2);
+float repetition(vec3 p, float lod) {	
+	vec3 c = vec3(2.7, 3.7, 2.7);// 2);
 	vec3 q = mod(p,c)-0.5*c;
-	return menger(q);
+	return menger(q, lod);
 }
 
-float map(vec3 p) {
+
+float map(vec3 p, float lod) {
 	
-	if(p.y < 0)
-		return repetition(p);
-	else
-		return 1000;
+	//if(p.y < 0)
+		return repetition(p, lod);
+	//else
+	//	return 1000;
 	
 }
+/*
 
 vec3 getNormal(vec3 p ) {
 	float eps = 0.0001;
 	float center = map(p);
 	vec3 n = vec3( center - map(vec3(p.x+eps,p.y,p.z)),
                    center - map(vec3(p.x,p.y+eps,p.z)),
-                   center - map(vec3(p.x,p.y,p.z+eps)) );
+                   center - map(vec3(p.x,p.y,p.z+eps)));
 	return normalize(n);
 }
-
+*/
 vec4 intersect(vec3 origin, vec3 direction)
 {
 	float rayLength = 0.005;	
 	    
-    float maxt = 120.0f;	
+    float maxt = 100.0f;	
 	float i;
+	float dist =0;
 	for (i = 0; i < MAX_STEPS; ++i)
 	{
 		vec3 point = origin + direction*rayLength;
+		float len = rayLength;
+		len = 50.0/len;
+		//len = len;
+		//len *= 5;
+		len = 1+ floor(len);
+
 		
-		float dist = map(origin + direction * rayLength);
+		dist = map(origin + direction * rayLength, len);
 		if(dist < 0.001*rayLength)
-			return vec4(point, abs(i-10)/120 );
+			return vec4(point, abs(i-10)/MAX_STEPS );
 
 		rayLength += dist;		
 	}	
-	float steps = abs(i-10)/120;
+	float steps = abs(i-10)/MAX_STEPS;
 		
 	return vec4(origin + direction*maxt, steps);
 }
@@ -116,6 +147,7 @@ vec3 colorize(float c) {
 	return rgb;
 }
 
+/*
 float ambient(vec3 position, vec3 normal) {
 	float dist=0;
 	normal *= -1;
@@ -124,44 +156,15 @@ float ambient(vec3 position, vec3 normal) {
 	for(float i = 1; i < 5; ++i) {
 		n = normal*i/50;
 		p = position+n;
-		dist += pow(0.5, i) * (abs(map(p))/length(n));
+		dist += 1/pow(2, i) * (abs(map(p))/length(n));
 	}	
-	return  dist;
-}
-
-
-/*
-vec3 unproject() {
-	vec2 pixelSize = 1.0 / resolution;//(1.0/resolution.x, 1.0/resolution.y);	
-	vec3 pos = vec3 (( gl_FragCoord.x * pixelSize.x ) , ( gl_FragCoord.y * pixelSize.y ) , 0.0);
-	pos.z = texture( depthTex, pos.xy).r ;		
-	vec4 clip = inverseMatrix * vec4 ( pos * 2.0 - 1.0 , 1.0);
-	pos = clip . xyz / clip . w;
-	return pos;
-}
-
-
-vec2 project(vec3 pos) {
-	pos = vec3(vec4(pos, 1.0)*viewMatrix*projectionMatrix);
-	return pos.xy;
+	if(dist > 0.95)
+		return 0.9;
+	else 
+		return dist;
 }
 */
 
-
-/*
-float packColor(vec3 color) {
-    return color.r + color.g * 256.0 + color.b * 256.0 * 256.0;
-}
-
-vec3 unpackColor(float f) {
-    vec3 color;
-    color.b = floor(f / 256.0 / 256.0);
-    color.g = floor((f - color.b * 256.0 * 256.0) / 256.0);
-    color.r = floor(f - color.b * 256.0 * 256.0 - color.g * 256.0);
-    // now we have a vec3 with the 3 components in range [0..256]. Let's normalize it!
-    return color / 256.0;
-}
-*/
 
 void main( void ) {
 
@@ -175,24 +178,16 @@ void main( void ) {
 	vec3 direction = normalize(target - origin);	
 	vec3 right = normalize(cross(direction, upVector));	
 	vec3 up = normalize(cross(right, direction));	
-	vec3 rayDirection = normalize(p.x * right + p.y * up + 1.5 * direction);	
-	float d1 = 1.00;
-	//if(firstPass == 0.0)
-		//d1 = packColor(texture2D(depthRGBTex, vec2(1-uv.x, 1-uv.y) ).rgb);	
-	vec4 intersectionPoint = intersect(origin, rayDirection*d1);
+	vec3 rayDirection = normalize(p.x * right + p.y * up + 1.5 * direction);			
+	vec4 intersectionPoint = intersect(origin, rayDirection);
 	
     vec3 shit = vec3(0.0); 
-	//shit += vec3(1.0,1.0,1.0) * 0.2* ambient(intersectionPoint.xyz, getNormal(intersectionPoint.xyz)); 
-	if(intersectionPoint.w < 1){
-		shit += vec3(0.2,1.0,1.5) * 0.4 * ambient(intersectionPoint.xyz, getNormal(intersectionPoint.xyz))*(1.01 - intersectionPoint.w); 
-	}
-	shit += 1.2*(colorize(sqrt(intersectionPoint.w)) );//0.3*vec3(8.0*intersectionPoint.w, 0.0*intersectionPoint.w, 1.2);
-	//shit += colorize(length(intersectionPoint.xyz - origin)/120);
-	//depthRGB = unpackColor(length(origin - intersectionPoint.xyz));
-	//color = vec3(length(origin-intersectionPoint.xyz)/ (length(direction)*420.0) );
+	
+	//if(intersectionPoint.w < 1){
+		//shit +=  ambient(intersectionPoint.xyz, getNormal(intersectionPoint.xyz));//*(1.01 - intersectionPoint.w); 
+	//}
+	shit += 1.2*(colorize((intersectionPoint.w)) );
+	
 	color = shit;
-	//if(firstPass == 0.0)
-	//	color = texture2D(colorTex, uv).rgb;
-	//else
-	//	color = vec3(0.0, 0.0, 0.5);
+	
 }

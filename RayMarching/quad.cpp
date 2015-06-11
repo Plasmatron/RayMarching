@@ -37,15 +37,30 @@ Quad::Quad() {
 void Quad::Render() {
 
 	//glBindVertexArray(vaoID);
+	
 	glEnableVertexAttribArray(0);	
 	
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexID);
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);   		
+	//glVertexPointer(3, GL_FLOAT,  0, vertices);
 	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);   		
+	
 	
 	glDisableVertexAttribArray(0);
 	//glBindVertexArray(0);
+	
+	
+	/*
+	 glBegin(GL_QUADS);   
+   glVertex3f(-1.0f,-1.0f, 0.0f);
+   glVertex3f(-1.0f, 1.0f, 0.0f);
+   glVertex3f( 1.0f, 1.0f, 0.0f);
+   glVertex3f( 1.0f,-1.0f, 0.0f);
+   
 
+   glEnd();
+
+   */
 }
 
 Quad::~Quad() {

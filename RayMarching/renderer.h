@@ -3,27 +3,29 @@
 #include "quad.h"
 #include "shader.h"
 #include "framebuffer.h"
+#include "oculus.h"
 
 
 struct Renderer {
 	float time;
 	Framebuffer * buffers[2];
-
-
+	Framebuffer * output;
 	Camera *mainCamera;
 	Quad *quad;
-	Shader *rt;
-	Shader *reprojection;
-	Shader *base;
 	
-	Renderer();
-	//~Renderer();
-	void RenderScene();
+	Shader *last;
+	Shader *base;
+	Oculus * oculus;
 
-	int last;
-	int current;
+	ovrDistortionMesh * leftMesh;
+	ovrDistortionMesh * rightMesh;
 
+	int previous, current;
+	int width, height;
 
-
-
+	int frameindex;
+	
+	Renderer(int width, int height);	
+	void RenderScene();	
+	
 };

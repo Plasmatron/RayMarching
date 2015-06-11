@@ -1,134 +1,80 @@
-
 #pragma comment(lib,"opengl32.lib")
 #pragma comment(lib,"glu32.lib")
 #pragma comment(lib,"glew32.lib")
 #pragma comment(lib,"winmm.lib")
 #pragma comment(lib,"ws2_32.lib")
+#pragma comment(lib,"glfw/glfw3dll.lib")
+#pragma comment(lib,"libovr.lib")
 
 
 
 #include "main.h"
+
 #include "renderer.h"
 
-#define BUFFER_OFFSET(i) ((void*)(i))
-#define RIGHT_HAND 1
-#define LEFT_HAND 0
-
-HWND  g_hWnd;
-RECT  g_rRect;
-HDC   g_hDC;
-HGLRC g_hRC;
-HINSTANCE g_hInstance;
+#define OVR_OS_WIN32
 
 
 
 
-
-
-void Init(HWND hWnd)
-{		
-	
-
-
-
-	g_hWnd = hWnd;
-	GetClientRect(g_hWnd, &g_rRect);
-	InitializeOpenGL(g_rRect.right, g_rRect.bottom);
-	glewInit();	
-	glDisable(GL_CULL_FACE);	
-	glClearColor ( 0.0, 0.5, 0.7, 0.0 ) ;
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-	
-	
-}
-
-WPARAM MainLoop()
-{	
-		
-	MSG msg;
-	const char* strError = "win";
-	Renderer *renderer = new Renderer();
-	
-	float wait = 0;
-
-
-	
-
-
-
-	while(1)
-	{	
-				
-				
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-        {
-			if(msg.message == WM_QUIT)
-				break;
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-
-		else
-		{			
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			//renderer->RenderScene(test);		
-			renderer->RenderScene();
-			SwapBuffers(g_hDC);
-				
-        }
-	}
-			
-
-	
-	DeInit();
- 
-	return(msg.wParam);
-}
- 
-
-LRESULT CALLBACK WinProc(HWND hWnd,UINT uMsg, WPARAM wParam, LPARAM lParam)
+static void error_callback(int error, const char* description)
 {
-	LONG    lRet = 0;
-    PAINTSTRUCT    ps;
- 
-    switch (uMsg)
-	{
-    case WM_SIZE:		// Если изменён размер окна
- 
-		SizeOpenGLScreen(LOWORD(lParam),HIWORD(lParam));
-		GetClientRect(hWnd, &g_rRect);		
-        break;
- 
-	case WM_PAINT:		
-		BeginPaint(hWnd, &ps);	
-		EndPaint(hWnd, &ps);	
-		break;
- 
-	case WM_KEYDOWN:	
-				
-		switch(wParam)
-		{
-			case VK_ESCAPE:		
-				PostQuitMessage(0);	
-				break;
-			case 0x42:
-				break;
+    fputs(description, stderr);
+}
 
-		}
-		break;
- 
-    case WM_CLOSE:		
-        PostQuitMessage(0);	
-        break;
- 
-    default:		
-        lRet = DefWindowProc (hWnd, uMsg, wParam, lParam);
-        break;
-    //case WM_LBUTTONDOWN:                   
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GL_TRUE);
+}
+
+int main(void)
+{
+    GLFWwindow* window;
+
+	int width, height;
 
 
+    glfwSetErrorCallback(error_callback);
+
+    if (!glfwInit())
+        exit(EXIT_FAILURE);
+
+    window = glfwCreateWindow(1600, 900, "Simple example", glfwGetPrimaryMonitor(), NULL);
+
+    if (!window)
+    {
+        glfwTerminate();
+        exit(EXIT_FAILURE);
     }
 
- 
-    return lRet;
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
+	glewInit();
+    glfwSetKeyCallback(window, key_callback);
+	
+	 
+	glfwGetFramebufferSize(window, &width, &height);
+
+	glViewport(0,0, width, height);
+
+	Renderer * renderer = new Renderer(width, height);
+		 	
+
+
+    while (!glfwWindowShouldClose(window))
+    {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		
+		renderer->RenderScene();
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    glfwDestroyWindow(window);
+
+    glfwTerminate();
+    exit(EXIT_SUCCESS);
 }
+
+

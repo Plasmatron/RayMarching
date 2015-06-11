@@ -14,32 +14,32 @@ uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform mat4 inverseMatrix;
 
+uniform int frameindex;
+
 
 uniform sampler2D colorTex;
-uniform sampler2D depthTex;
-
 
 #define MAX_STEPS 80
 #define SPEED_SCALE 0.25
 #define INF 64
 
 out vec3 color;
-out vec3 coordRGB;
 
 
 
-#define SCALE -2.4
+//#define SCALE -2.4 + 0.5*cos(time*0.1)
+#define SCALE 3// + 0.3*cos(time*0.25)
 #define MINRAD2 0.5
 
 #define DIST_MULTIPLIER 1.0
 #define MAX_DIST 4.0
 
 
-#define iters 5
-#define color_iters 5
+#define iters 10
+#define color_iters 10
 
 
-vec3  surfaceColor1 = vec3(0.15, 0.84, 0.11),
+vec3  surfaceColor1 = vec3(0.15, 0.84, 0.51),
       surfaceColor2 = vec3(0.89, 0.15, 0.15),
       surfaceColor3 = vec3(0.25, 0.06, 0.43);
 
@@ -109,9 +109,9 @@ float menger(vec3 p) {
 }
 
 float repetition(vec3 p) {	
-	vec3 c = vec3(7.7, 7.7, 7.7);
+	vec3 c = vec3(7.7, 7.7, 7.7) *1.5;
 	vec3 q = mod(p,c)-0.5*c;
-	return menger(q/3)*3.0;
+	return d(q);
 }
 
 float map(vec3 p) {
@@ -120,18 +120,18 @@ float map(vec3 p) {
 		return repetition(p);
 	//else
 	//	return 1000;
-	//return d(p);
+	//return menger(p);
 }
 
 
 
-
-
-vec4 intersect(vec3 origin, vec3 direction)
+vec4 intersect(vec3 origin, vec3 direction, float assist)
 {
 	float rayLength = 0.01;	
-	    
-    float maxt = 120.0f;	
+	if(assist > 0.01) 
+	    rayLength = assist;
+
+    float maxt = 100.0f;	
 	float i;
 	for (i = 0; i < MAX_STEPS; ++i)
 	{
@@ -142,7 +142,7 @@ vec4 intersect(vec3 origin, vec3 direction)
 			return vec4(point, abs(i)/MAX_STEPS );
 
 		rayLength += dist;		
-	}	
+	}
 	float steps = abs(i)/MAX_STEPS;
 		
 	return vec4(origin + direction*maxt, steps);
@@ -158,7 +158,7 @@ vec3 hsv2rgb(vec3 c)
 
 
 vec3 colorize(float c) {
-	
+	float h = time - floor(time);
 	float hue = mix (0.25, 1.15, min(c * 1.2 - 0.05, 0.25));
 	float sat = 1.0 - pow(c, 4.0);
 	float lum = c;
@@ -167,48 +167,40 @@ vec3 colorize(float c) {
 	return rgb;
 }
 
+vec3 getNormal(vec3 p ) {
+	float eps = 0.0001;
+	float center = map(p);
+	vec3 n = vec3( center - map(vec3(p.x+eps,p.y,p.z)),
+                   center - map(vec3(p.x,p.y+eps,p.z)),
+                   center - map(vec3(p.x,p.y,p.z+eps)));
+	return normalize(n);
+}
 
-
-vec2 scan (vec2 uv1, vec2 uv2) {
-	if(texture2D(depthTex, uv2).z > texture2D(depthTex, uv1).z ) {
-		for(float i = 0; i < 1; i=i+0.1){
-			float depth = texture2D(depthTex, uv1*i + uv2*(1-i) ).z;
-			if(depth >= i){
-				return uv1*i + uv2*(1-i);
-			}
-		}
-		return uv1;
-		
-	}
-	else {
-		for(float i = 0; i < 1; i=i+0.1){
-			float depth = texture2D(depthTex, uv2*i + uv1*(1-i) ).z;
-			if(depth >= i){
-				return uv2*i + uv1*(1-i);
-			}
-		}
-
-		return uv2;
-	}
-	
-	
-
+float ambient(vec3 position, vec3 normal) {
+	float dist=0;
+	normal *= -1;
+	vec3 n;
+	vec3 p;
+	for(float i = 1; i < 5; ++i) {
+		n = normal*i/50;
+		p = position+n;
+		dist += 1/pow(2, i) * (abs(map(p))/length(n));
+	}	
+	if(dist > 0.95)
+		return 0.9;
+	else 
+		return dist;
 }
 
 
 
-vec3 planeIntersection(vec3 position, vec3 direction, vec3 planePosition, vec3 planeNormal) {
-	float t;
-	t = dot((planePosition - position), planeNormal)/dot(planeNormal, direction);
-	return position+direction*t;	
-}
 
 void main(void) {
 
 	vec2 uv = gl_FragCoord.xy / resolution;
 
 	vec2 p = (uv * 2.0 - 1.0); p.x *= resolution.x / resolution.y;
-	vec3 pos = vec3(position.x, time, position.z);
+	vec3 pos = vec3(position.x, position.y, position.z);
 	vec3 origin = pos;
 	vec3 target = pos + direction;
 
@@ -219,64 +211,54 @@ void main(void) {
 
 	vec2 uvn[4];
 	vec2 pm[4];
-
-	pm[0].x = (uv.x)*2.0 - 1.0;	
+	
+	pm[0].x = (uv.x)*2.0 - 1.0;		
 	pm[0].y = (1-uv.y)*2.0 - 1.0;
 	
-
 	mat4 invR = projectionMatrix * previousViewMatrix * inverse(projectionMatrix * viewMatrix);
+	
+	vec4 clip = invR * (vec4(pm[0], 1.0, 1));
 
-	
-	vec4 clip = projectionMatrix * previousViewMatrix * inverse(projectionMatrix * viewMatrix) * (vec4(p, 1.0, 1));
 	clip /= clip.w;
-	uvn[0] = clip.xy;
-	
-	uvn[0] = uvn[0]*0.5+0.5;
+	uvn[0] = clip.xy;	
+	uvn[0] = uvn[0]*0.5+0.5;	
 	uvn[0].y = 1-uvn[0].y;
 	
-	/*
+
+	//texture2D(colorTex, uvn[0]);
 	
-	vec4 rayStart = invR * vec4(0.0, 0.0, 0.0,1.0);
-	vec4 rayEnd = invR * vec4(pm[0], 1.0, 1.0);
-
-	rayStart /= rayStart.w;
-	rayEnd /= rayEnd.w;
-
-
 	
-	vec3 nearCoordinates = planeIntersection(rayStart.xyz, rayEnd.xyz, vec3(0, 0, 1), vec3(0,0,1)); 
-	vec3 farCoordinates = planeIntersection(rayStart.xyz, rayEnd.xyz, vec3(0, 0, 1000), vec3(0,0,1));
+	//if (uvn[0].x > 1.0 || uvn[0].y > 1.0 || uvn[0].x < 0.0 || uvn[0].y < 0.0 || frameindex%3 == 0){
+		
+		vec4 intersectionPoint = intersect(origin, rayDirection, 0.0);
 	
-
-
-	vec2 uv1 = nearCoordinates.xy;
-	uv1 = uv1*0.5 * (1.0/1) + 0.5;
-	uv1.y = 1-uv1.y;
-
-	vec2 uv2 = farCoordinates.xy;
-	uv2 = uv2*0.5 * (1.0/1000) + 0.5;
-	uv2.y = 1-uv2.y;
-
+		//gl_FragDepth = length(origin-intersectionPoint.xyz)/100.0;
 	
-	uvn[0] = uv2;//scan(uv1, uv2);
-	
-	float z = 0.0;	
-	*/
+			color =-2.0*mix( surfaceColor1, -abs(rayDirection), intersectionPoint.w) +
+				    1.19*surfaceColor3 +
+					0.5*vec3(ambient(intersectionPoint.xyz, getNormal(intersectionPoint.xyz) ) + 0.1) ;
 
-
-	int sm = int(gl_FragCoord.x+(floor(time*5) ) )%32;
-	//if (uvn[0].x < 1.0 || uvn[0].y > 1.0 || uvn[0].x < 0.0 || uvn[0].y < 0.0 || firstPass == 1.0){
-		//vec4 intersectionPoint = intersect(origin, rayDirection);
-		//gl_FragDepth = length(origin-intersectionPoint.xyz);
-		//gl_FragDepth = length(origin-intersectionPoint.xyz)*(zNear+zFar)/(zNear-zFar) + 2*zFar*zNear/(zNear-zFar)*pow(2,24);
-		//color = //clr(intersectionPoint.xyz);
-		color = vec3(1.0);//0.5*vec3(1.0, 0.5, intersectionPoint.w);
 	//}
-	/*
-	else {
-		z = texture2D(depthTex, uvn[0]).z;
-		gl_FragDepth = z;
-		color = texture2D(colorTex, uvn[0]).rgb;
-	}	
-	*/
+	
+	//else {
+	
+	//	color = texture2D(colorTex, uvn[0]).xyz;
+		
+		
+		//float depth = texture2D(depthTex, uvn[0]).z*100;
+
+		//vec4 intersectionPoint = intersect(origin, rayDirection, depth);
+		
+		//gl_FragDepth = length(origin-intersectionPoint.xyz)/100.0;
+		
+		//color =-2.0*mix( surfaceColor1, -abs(rayDirection), intersectionPoint.w) +
+		//		1.19*surfaceColor3 +
+		//		0.5*vec3(ambient(intersectionPoint.xyz, getNormal(intersectionPoint.xyz) ) + 0.1) ;
+
+	//}
+	
+					
+		
+	
+	
 }

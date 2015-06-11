@@ -10,7 +10,35 @@
 #include <gl/glext.h>
 #include <gl/glu.h>
 
+#include <GLFW/glfw3.h>
 
+#define OVR_OS_WIN32
+
+
+#if defined(_WIN32)
+   #include <Windows.h>
+   #define GLFW_EXPOSE_NATIVE_WIN32
+   #define GLFW_EXPOSE_NATIVE_WGL
+#elif defined(__linux__)
+   #include <X11/X.h>
+   #include <X11/extensions/Xrandr.h>
+   #define GLFW_EXPOSE_NATIVE_X11
+   #define GLFW_EXPOSE_NATIVE_GLX
+#endif
+
+#include <GLFW/glfw3.h>
+
+#if !defined(__APPLE__)
+   #include <GLFW/glfw3native.h>
+#endif
+
+#include <ovr/OVR.h>
+#include <ovr/Src/OVR_CAPI.h>
+#include <ovr/Src/OVR_CAPI_GL.h>
+
+
+
+/*
 #define SCREEN_WIDTH 800
 #define SCREEN_HEIGHT 600
 #define SCREEN_DEPTH 32
@@ -36,5 +64,6 @@ void SizeOpenGLScreen(int width, int height);
 void InitializeOpenGL(int width, int height);
 void Init(HWND hWnd);
 void DeInit();
+*/
 
 #endif

@@ -77,6 +77,15 @@ class Shader{
 		//else
 			glUniform4f(variables[variable], value.x, value.y, value.z, value.w);
 	}
+	void passUniform(int value, char* variable){
+
+		if( !variables.count(variable) )//не нашли переменную с таким именем
+			//variables[variable] = glGetUniformLocation(programHandle, variable);
+			variables.insert(std::pair <char*, GLint> (variable, glGetUniformLocation(programHandle, variable) ) );  //кладем переменную с сопоставленным ей ключом
+		//else
+			glUniform1i(variables[variable], value);
+	}
+
 
 	void passUniform(vec3 value, char* variable){
 		if(!variables.count(variable) )

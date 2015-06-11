@@ -1,6 +1,6 @@
 #include "main.h"
  
-
+/*
 HWND CreateMyWindow(LPSTR strWindowName, int width, int height, DWORD dwStyle, bool bFullScreen, HINSTANCE hInstance)
 {
 	HWND hWnd;		
@@ -138,3 +138,4 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hprev, PSTR cmdline, int ishow
 	// Запускаем игровой цикл
 	return MainLoop();
 }
+*/
